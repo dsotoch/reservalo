@@ -12,29 +12,32 @@ class ModeloCliente extends EntidadCliente {
     nombre: nombre,
     dni: dni,
     telefono: telefono,
+    email: email
   );
 
   factory ModeloCliente.fromMap(Map<String, dynamic> map) {
     return ModeloCliente(
-      id: map["id"] ?? "",
-      nombre: map["nombre"] ?? "",
-      email: map["email"] ?? "",
-      dni: map["dni"] ?? "",
-      telefono: map["telefono"] ?? "",
+      id: map["id"].toString() ?? "",
+      nombre: map["nombres"].toString()  ?? "",
+      email: map["email"].toString()  ?? "",
+      dni: map["dni"].toString()  ?? "",
+      telefono: map["telefono"].toString()  ?? "",
     );
   }
 
-  Map<String, dynamic> toMap() {
+   Map<String, dynamic> toMap() {
     return {
       "id": id,
-      "nombre": nombre,
+      "nombres": nombre,
       "dni": dni,
       "telefono": telefono,
+      "email":email
     };
   }
 
   EntidadCliente toEntity() {
     return EntidadCliente(
+      email: email,
       id: id,
       nombre: nombre,
       dni: dni,

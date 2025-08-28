@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:reservalo/modulos/alojamiento/datos/repositorios/repositorioAlojamiento.dart';
+import 'package:reservalo/modulos/alojamiento/presentacion/controladores/controladorAlojamiento.dart';
+import 'package:reservalo/modulos/clientes/datos/repositorios/repositorioCliente.dart';
 import 'package:reservalo/modulos/clientes/presentacion/controladores/controladorCliente.dart';
 import 'package:reservalo/modulos/inicio/presentacion/paginas/index.dart';
+import 'package:reservalo/modulos/reservas/datos/repositorios/repositorioReserva.dart';
+import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 
 import 'core/controladores/controladorNavegacion.dart';
 
@@ -15,7 +20,9 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (context) => ControladorInicio(),),
-        ChangeNotifierProvider(create: (context) => ControladorCliente(),)
+        ChangeNotifierProvider(create: (context) => ControladorCliente(repositorioCliente: RepositorioCliente()),),
+        ChangeNotifierProvider(create: (context) => ControladorAlojamiento(repositorioAlojamiento: RepositorioAlojamiento()),),
+        ChangeNotifierProvider(create: (context) => ControladorReserva(repositorioReserva: RepositorioReserva(),controladorCliente: ControladorCliente(repositorioCliente: RepositorioCliente())),)
 
       ],
       child: const MyApp(),

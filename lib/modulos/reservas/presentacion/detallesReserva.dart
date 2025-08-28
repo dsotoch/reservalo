@@ -1,19 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:reservalo/core/aplicacion/funciones.dart';
+import 'package:reservalo/core/controladores/controladorNavegacion.dart';
 import 'package:reservalo/core/widgets/appBar.dart';
+import 'package:reservalo/modulos/alojamiento/datos/modelos/modeloAlojamiento.dart';
+import 'package:reservalo/modulos/alojamiento/presentacion/controladores/controladorAlojamiento.dart';
+import 'package:reservalo/modulos/reservas/datos/modelos/modeloReserva.dart';
+import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
+import 'package:reservalo/modulos/reservas/presentacion/indexPresentacion.dart';
+import 'package:reservalo/modulos/reservas/presentacion/nuevaReserva.dart';
 
 class DetallesReserva extends StatelessWidget {
-  const DetallesReserva({super.key});
+  final ModeloReserva modeloReserva;
+  final bool reservaNueva;
+  const DetallesReserva({
+    super.key,
+    required this.modeloReserva,
+    this.reservaNueva = true,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final controladorInicio = Provider.of<ControladorInicio>(
+      context,
+      listen: false,
+    );
+    final controladorAlojamiento = Provider.of<ControladorAlojamiento>(
+      context,
+      listen: false,
+    );
+    final controladorReserva = Provider.of<ControladorReserva>(
+      context,
+      listen: false,
+    );
+
     return Scaffold(
       appBar: AppBarWidget(
-        button: IconButton(onPressed: (){}, icon: Icon(Icons.edit)),
         titulo: Text(
           "Detalles de la Reserva",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
+        button: !reservaNueva
+            ? IconButton(
+                onPressed: () async {
+                  await controladorAlojamiento.listarAlojamientos();
+                  controladorReserva.listaModeloAlojamiento =
+                      controladorAlojamiento.modeloAlojamiento;
+                  await controladorReserva.obtenerReservas(
+                    modeloReserva.entidadAlojamiento.id,
+                  );
+                  if (context.mounted) {
+                    final modeloAlojamiento=ModeloAlojamiento(nombre: modeloReserva.entidadAlojamiento.nombre, direccion: modeloReserva.entidadAlojamiento.direccion, id: modeloReserva.entidadAlojamiento.id);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => NuevaReservaPage(nombreAlojamiento:modeloAlojamiento,editar: true,modeloReserva: modeloReserva,),));
+                  }
+                },
+                icon: Icon(Icons.edit),
+              )
+            : SizedBox.shrink(),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -22,7 +66,8 @@ class DetallesReserva extends StatelessWidget {
           children: [
             // Título de la cabaña
             Text(
-              "🏫 Cabaña Los Pinos",
+              "🏫 ${modeloReserva.entidadAlojamiento.nombre}",
+              softWrap: true,
               style: TextStyle(
                 fontSize: 20.sp,
                 color: Colors.black,
@@ -48,13 +93,15 @@ class DetallesReserva extends StatelessWidget {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               "Entrada",
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             SizedBox(height: 4),
-                            Text("12/08/2025 14:00"),
+                            Text(
+                              "${Funciones.formatDateDMY(modeloReserva.fechaLLegada)} ${Funciones.stringToAmPm(modeloReserva.horaLlegada)}",
+                            ),
                           ],
                         ),
                         Container(
@@ -63,8 +110,8 @@ class DetallesReserva extends StatelessWidget {
                             color: Colors.blue.shade200,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            "📅 #15",
+                          child: Text(
+                            "📅 #${modeloReserva.fechaLLegada.day}",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -91,8 +138,8 @@ class DetallesReserva extends StatelessWidget {
                             color: Colors.orange.shade200,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
-                            "Pendiente",
+                          child: Text(
+                            modeloReserva.estadoReserva,
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -106,25 +153,34 @@ class DetallesReserva extends StatelessWidget {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               "Salida",
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            SizedBox(height: 4),
-                            Text("15/08/2025 10:00"),
+                            const SizedBox(height: 4),
+                            Text(
+                              "${Funciones.formatDateDMY(modeloReserva.fechaSalida)} ${Funciones.stringToAmPm(modeloReserva.horaSalida)}",
+                            ),
                           ],
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            Text(
-                              "Cliente",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(height: 4),
-                            Text("Juan Pérez"),
-                          ],
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Cliente",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                textAlign: TextAlign.end,
+                                modeloReserva.entidadCliente.nombre,
+                                softWrap: true,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -134,20 +190,32 @@ class DetallesReserva extends StatelessWidget {
                     Row(
                       children: [
                         Row(
-                          children: const [
-                            Icon(Icons.night_shelter_outlined),
+                          children: [
+                            Icon(Icons.dark_mode),
                             SizedBox(width: 4),
-                            Text("2"),
+                            Text(
+                              modeloReserva.fechaSalida
+                                  .difference(modeloReserva.fechaLLegada)
+                                  .inDays
+                                  .toString(),
+                            ),
                           ],
                         ),
                         const SizedBox(width: 16),
                         Row(
-                          children: const [
+                          children: [
                             Icon(Icons.person),
                             SizedBox(width: 4),
-                            Text("4"),
+                            Text(
+                              (int.parse(modeloReserva.cantidadAdultos) +
+                                      int.parse(modeloReserva.cantidadNinos))
+                                  .toString(),
+                            ),
                           ],
                         ),
+                        const SizedBox(width: 16),
+
+                        if (modeloReserva.traeMascotas) Icon(Icons.pets),
                       ],
                     ),
                   ],
@@ -155,34 +223,51 @@ class DetallesReserva extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.green.shade100,
-            borderRadius: BorderRadius.only(
-              topRight: Radius.circular(1.sw),
-              topLeft: Radius.circular(1.sw)
-            )
-
-          ),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text("💰 Cobro",style: TextStyle(fontSize: 14.sp,fontWeight: FontWeight.bold),),
-              const SizedBox(height: 8,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(1.sw),
+                  topLeft: Radius.circular(1.sw),
+                ),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _celdaFooter("Importe Total", "\$500.00", Colors.blue),
-                  _celdaFooter("Señal / Adelanto", "\$150.00", Colors.orange),
-                  _celdaFooter("Pendiente", "\$350.00", Colors.red),
+                  Text(
+                    "💰 Cobro",
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _celdaFooter(
+                        "Importe Total",
+                        "\S/${modeloReserva.importeTotal}",
+                        Colors.blue,
+                      ),
+                      _celdaFooter(
+                        "Señal / Adelanto",
+                        "\S/${modeloReserva.adelanto}",
+                        Colors.orange,
+                      ),
+                      _celdaFooter(
+                        "Pendiente",
+                        "\S/${modeloReserva.pendiente}",
+                        Colors.red,
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          )
-        ),
-            const SizedBox(height: 16,),
+            ),
+            const SizedBox(height: 16),
             // Segundo Card: Datos de contacto
             Card(
               color: Colors.white,
@@ -205,30 +290,29 @@ class DetallesReserva extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Row(
-                      children: const [
+                      children: [
                         Icon(Icons.person_outline),
                         SizedBox(width: 8),
-                        Text("Juan Pérez"),
+                        Text(modeloReserva.entidadCliente.nombre),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
-                      children: const [
+                      children: [
                         Icon(Icons.phone),
                         SizedBox(width: 8),
-                        Text("+51 987654321"),
+                        Text(modeloReserva.entidadCliente.telefono),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
-                      children: const [
+                      children: [
                         Icon(Icons.email_outlined),
                         SizedBox(width: 8),
-                        Text("juan.perez@email.com"),
+                        Text(modeloReserva.entidadCliente.email),
                       ],
                     ),
                     const SizedBox(height: 16),
-
                   ],
                 ),
               ),
@@ -244,12 +328,28 @@ class DetallesReserva extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            if (!reservaNueva) ...[
+              Text(
+                modeloReserva.observaciones,
+                style: TextStyle(fontSize: 12.sp),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                modeloReserva.notaCliente,
+                style: TextStyle(fontSize: 12.sp),
+              ),
+              const SizedBox(height: 8),
+            ],
             Text(
               "El cliente trae mascotas. Prefiere habitación con vista al jardín. Necesita cuna para bebé.",
               style: TextStyle(fontSize: 12.sp),
             ),
             const SizedBox(height: 8),
-            Image.asset("assets/images/cabana.jpg"),
+            Image.asset(
+              "assets/images/logo.jpg",
+              width: double.infinity,
+              height: 170.h,
+            ),
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {},
@@ -295,16 +395,14 @@ class DetallesReserva extends StatelessWidget {
       ),
     );
   }
+
   Widget _celdaFooter(String label, String valor, Color color) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontSize: 14.sp, color: Colors.black),
         ),
         SizedBox(height: 4.h),
         Text(
@@ -319,4 +417,3 @@ class DetallesReserva extends StatelessWidget {
     );
   }
 }
-

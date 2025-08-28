@@ -2,37 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:reservalo/core/aplicacion/funciones.dart';
+import 'package:reservalo/core/widgets/confirmacion.dart';
 import 'package:reservalo/modulos/clientes/datos/modelos/modeloCliente.dart';
 import 'package:reservalo/modulos/clientes/presentacion/controladores/controladorCliente.dart';
 
 class IndexClientes extends StatelessWidget {
-  final List datos = [
-    {
-      "id": "1",
-      "nombre": "Juan Pérez",
-      "telefono": "987654321",
-      "dni": "12345678",
-    },
-    {
-      "id": "2",
-      "nombre": "María López",
-      "telefono": "987123456",
-      "dni": "87654321",
-    },
-    {
-      "id": "3",
-      "nombre": "Carlos García",
-      "telefono": "999888777",
-      "dni": "11223344",
-    },
-    {
-      "id": "4",
-      "nombre": "Ana Torres",
-      "telefono": "911222333",
-      "dni": "44332211",
-    },
-  ];
-
   IndexClientes({super.key});
 
   final _formkey = GlobalKey<FormState>();
@@ -42,12 +16,17 @@ class IndexClientes extends StatelessWidget {
     String nombre,
     String dni,
     String telefono,
+    String email,
   ) {
     final idController = TextEditingController(text: idcliente);
     final nombreController = TextEditingController(text: nombre);
     final dniController = TextEditingController(text: dni);
     final telefonoController = TextEditingController(text: telefono);
-
+    final emailController = TextEditingController(text: email);
+    final controladorCliente = Provider.of<ControladorCliente>(
+      context,
+      listen: false,
+    );
     showDialog(
       context: context,
       builder: (context) {
@@ -72,13 +51,13 @@ class IndexClientes extends StatelessWidget {
               children: [
                 TextFormField(
                   decoration: const InputDecoration(
-                    labelText: "Nombre",
+                    labelText: "Nombres y Apellidos",
                     prefixIcon: Icon(Icons.person),
                   ),
                   onSaved: (newValue) => nombreController.text = newValue ?? '',
                   controller: nombreController,
                   validator: (value) =>
-                      Funciones.validacionText("Nombre", value),
+                      Funciones.validacionText("Nombres Y Apellidos", value),
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
@@ -104,6 +83,16 @@ class IndexClientes extends StatelessWidget {
                   validator: (value) =>
                       Funciones.validacionText("Telefono", value),
                 ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  onSaved: (newValue) => emailController.text = newValue ?? '',
+                  controller: emailController,
+                ),
               ],
             ),
           ),
@@ -116,11 +105,61 @@ class IndexClientes extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (_formkey.currentState!.validate()) {
                   _formkey.currentState?.save();
+                  final modelo = ModeloCliente(
+                    id: idController.value.text,
+                    nombre: nombreController.value.text,
+                    email: emailController.value.text,
+                    dni: dniController.value.text,
+                    telefono: telefonoController.value.text,
+                  );
+                  bool existe = controladorCliente.listaClientes.any((c) =>
+                  (c.dni == modelo.dni || c.email == modelo.email || c.telefono == modelo.telefono) &&
+                      c.id != idController.value.text
+                  );
+                  Funciones.ocultarTeclado(context);
 
-                  Navigator.pop(context);
+                  if (existe) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "⚠️ Ya Existe un Cliente con alguno de los Datos Ingresados.",
+                        ),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  final respuesta = await controladorCliente.crearCliente(
+                    modelo,
+                  );
+                  if (respuesta) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("💫 Cliente registrado Correctamente."),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("⚠️ Error al registrar."),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  }
+                  nombreController.clear();
+                  emailController.clear();
+                  dniController.clear();
+                  telefonoController.clear();
+                  idController.clear();
                 }
               },
               style: ButtonStyle(
@@ -143,14 +182,12 @@ class IndexClientes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controladorCliente = Provider.of<ControladorCliente>(context);
-
-    // Inicializar la lista solo una vez
-    if (controladorCliente.listaClientes.isEmpty) {
-      controladorCliente.listaClientes = datos
-          .map((e) => ModeloCliente.fromMap(e))
-          .toList();
-      controladorCliente.filtrarClientes(""); // mostrar todos
-    }
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await controladorCliente.listarClientes();
+      if (controladorCliente.listaClientes.isEmpty) {
+        controladorCliente.filtrarClientes("");
+      }
+    });
 
     return Padding(
       padding: const EdgeInsets.all(10),
@@ -181,6 +218,7 @@ class IndexClientes extends StatelessWidget {
                   controladorCliente.nombre,
                   controladorCliente.dni,
                   controladorCliente.telefono,
+                  controladorCliente.email,
                 ),
                 icon: const Icon(Icons.add),
                 label: const Text("Nuevo"),
@@ -208,13 +246,15 @@ class IndexClientes extends StatelessWidget {
             itemBuilder: (context, index) {
               final cliente = controladorCliente.filtroListaClientes[index];
               return Card(
-                color: Colors.lightBlue.shade50,
+                color: Colors.lightGreen.shade200,
                 elevation: 3,
                 margin: const EdgeInsets.symmetric(vertical: 5),
                 child: ListTile(
                   leading: const Icon(Icons.person, color: Colors.blue),
                   title: Text("${cliente.nombre} (${cliente.dni})"),
-                  subtitle: Text(cliente.telefono),
+                  subtitle: Text(
+                    "📲 ${cliente.telefono} *** ${cliente.email} 📧",
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -226,12 +266,38 @@ class IndexClientes extends StatelessWidget {
                           cliente.nombre,
                           cliente.dni,
                           cliente.telefono,
+                          cliente.email,
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          // Eliminar cliente
+                        onPressed: () async {
+                          final validacion=await Confirmacion.showConfirmDialog(context, title: "¿⚠️Estas Seguro de Eliminar el Registro?", message: "Cliente a eliminar ${cliente.nombre}");
+                           if(validacion!=null && !validacion){
+                             return;
+                           }
+                          final respuesta = await controladorCliente
+                              .eliminarCliente(cliente.id);
+                          if (respuesta["status"] == "success") {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("💫 ${respuesta["data"]}"),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                            await controladorCliente.listarClientes();
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("💫 ${respuesta["message"]}"),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          }
                         },
                       ),
                     ],

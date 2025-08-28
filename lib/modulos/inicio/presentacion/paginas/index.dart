@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reservalo/core/widgets/appBar.dart';
+import 'package:reservalo/modulos/alojamiento/presentacion/controladores/controladorAlojamiento.dart';
 import 'package:reservalo/modulos/alojamiento/presentacion/paginas/indexAlojamiento.dart';
 import 'package:reservalo/modulos/clientes/presentacion/paginas/indexClientes.dart';
 import 'package:reservalo/modulos/inicio/presentacion/paginas/principal.dart';
+import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 import 'package:reservalo/modulos/reservas/presentacion/indexPresentacion.dart';
 
 import '../../../../core/controladores/controladorNavegacion.dart';
@@ -12,6 +14,15 @@ class Index extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controladorInicio = Provider.of<ControladorInicio>(context);
+    final controladorAlojamiento = Provider.of<ControladorAlojamiento>(
+      context,
+      listen: false,
+    );
+    final controladorReserva = Provider.of<ControladorReserva>(
+      context,
+      listen: false,
+    );
+
     return Scaffold(
       appBar: AppBarWidget(
         titulo: Consumer<ControladorInicio>(
@@ -98,10 +109,17 @@ class Index extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.calendar_month),
               title: Text('Reservas'),
-              onTap: () {
+              onTap: () async {
                 controladorInicio.paginaActiva = "reservas";
-
-                Navigator.pop(context);
+                await controladorAlojamiento.listarAlojamientos();
+                controladorReserva.listaModeloAlojamiento =
+                    controladorAlojamiento.modeloAlojamiento;
+                await controladorReserva.obtenerReservas(
+                  controladorReserva.listaModeloAlojamiento[0].id,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
               },
             ),
             ListTile(
