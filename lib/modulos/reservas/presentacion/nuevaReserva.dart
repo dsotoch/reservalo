@@ -14,14 +14,14 @@ import 'package:reservalo/modulos/reservas/presentacion/detallesReserva.dart';
 
 class NuevaReservaPage extends StatelessWidget {
   final ModeloAlojamiento nombreAlojamiento;
-  final ModeloReserva? modeloReserva;
+  final ModeloReserva? modeloReservaParametro;
   final TextEditingController alojamientoController;
   final bool editar;
   NuevaReservaPage({
     super.key,
     required this.nombreAlojamiento,
     this.editar = false,
-    this.modeloReserva
+    this.modeloReservaParametro,
   }) : alojamientoController = TextEditingController(
          text: nombreAlojamiento.nombre,
        );
@@ -54,29 +54,36 @@ class NuevaReservaPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controladorReserva = Provider.of<ControladorReserva>(context);
     if (editar) {
-      fechaLlegada.value = modeloReserva?.fechaLLegada;
-      fechaSalida.value = modeloReserva?.fechaSalida;
-      horaLlegada.value = Funciones.stringToTime(modeloReserva!.horaLlegada);
-      horaSalida.value = Funciones.stringToTime(modeloReserva!.horaSalida);
-      adultos.value=int.parse(modeloReserva!.cantidadAdultos);
-      ninos.value=int.parse(modeloReserva!.cantidadNinos);
-      traeMascotas.value=modeloReserva!.traeMascotas;
-      totalController.text=modeloReserva!.importeTotal.toString();
-      senalController.text=modeloReserva!.adelanto.toString();
-      pendienteController.text=modeloReserva!.pendiente.toString();
-      observacionesController.text=modeloReserva!.observaciones;
-      dniController.text=modeloReserva!.entidadCliente.dni;
-      nombresController.text=modeloReserva!.entidadCliente.nombre;
-      telefonoController.text=modeloReserva!.entidadCliente.telefono;
-      correoController.text=modeloReserva!.entidadCliente.email;
-      notaController.text=modeloReserva!.notaCliente;
-      estadoReserva.value=modeloReserva!.estadoReserva;
+      fechaLlegada.value = modeloReservaParametro?.fechaLLegada;
+      fechaSalida.value = modeloReservaParametro?.fechaSalida;
+      horaLlegada.value = Funciones.stringToTime(
+        modeloReservaParametro!.horaLlegada,
+      );
+      horaSalida.value = Funciones.stringToTime(
+        modeloReservaParametro!.horaSalida,
+      );
+      adultos.value = int.parse(modeloReservaParametro!.cantidadAdultos);
+      ninos.value = int.parse(modeloReservaParametro!.cantidadNinos);
+      traeMascotas.value = modeloReservaParametro!.traeMascotas;
+      totalController.text = modeloReservaParametro!.importeTotal.toString();
+      senalController.text = modeloReservaParametro!.adelanto.toString();
+      pendienteController.text = modeloReservaParametro!.pendiente.toString();
+      observacionesController.text = modeloReservaParametro!.observaciones;
+      dniController.text = dniController.text.isEmpty?modeloReservaParametro!.entidadCliente.dni:dniController.text;
+      nombresController.text = nombresController.text.isEmpty?modeloReservaParametro!.entidadCliente.nombre:nombresController.text;
+      telefonoController.text = telefonoController.text.isEmpty?modeloReservaParametro!.entidadCliente.telefono:telefonoController.text;
+      correoController.text = correoController.text.isEmpty?modeloReservaParametro!.entidadCliente.email:correoController.text;
+      notaController.text = modeloReservaParametro!.notaCliente;
+      estadoReserva.value = modeloReservaParametro!.estadoReserva;
     }
     return Scaffold(
       appBar: AppBarWidget(
         titulo: Text(
-          "${editar?"Modificar":"Nueva"} Reserva",
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          "${editar ? "Modificar" : "Nueva"} Reserva",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Stack(
@@ -121,7 +128,9 @@ class NuevaReservaPage extends StatelessWidget {
                                 final fecha = await showDatePicker(
                                   context: context,
                                   initialDate: value ?? DateTime.now(),
-                                  firstDate: DateTime.now(),
+                                  firstDate: editar
+                                      ? modeloReservaParametro!.fechaLLegada
+                                      : DateTime.now(),
                                   lastDate: DateTime(
                                     DateTime.now().year,
                                     12,
@@ -260,7 +269,9 @@ class NuevaReservaPage extends StatelessWidget {
                                 final fecha = await showDatePicker(
                                   context: context,
                                   initialDate: value ?? DateTime.now(),
-                                  firstDate: DateTime.now(),
+                                  firstDate: editar
+                                      ? modeloReservaParametro!.fechaLLegada
+                                      : DateTime.now(),
                                   lastDate: DateTime(
                                     DateTime.now().year,
                                     12,
@@ -471,38 +482,41 @@ class NuevaReservaPage extends StatelessWidget {
                     onChanged: (value) async {
                       if (value.length == 8) {
                         Funciones.ocultarTeclado(context);
-                        controladorReserva.buscandoCliente = true;
-                        final resp = await controladorReserva.buscarCliente(
-                          value,
-                        );
-                        controladorReserva.buscandoCliente = false;
-
-                        if (resp["status"] == "success") {
-                          nombresController.text = resp["data"]["nombres"];
-                          telefonoController.text = resp["data"]["telefono"];
-                          correoController.text = resp["data"]["email"];
-                          controladorReserva.modeloCliente = ModeloCliente(
-                            id: resp["data"]["id"].toString(),
-                            nombre: resp["data"]["nombres"],
-                            email: resp["data"]["email"],
-                            dni: value,
-                            telefono: resp["data"]["telefono"],
+                        if (!editar) {
+                          controladorReserva.buscandoCliente = true;
+                          final resp = await controladorReserva.buscarCliente(
+                            value,
                           );
-                        } else {
-                          if (context.mounted) {
-                            Mensaje.showConfirmDialog(
-                              context,
-                              title: "Cliente Nuevo!",
-                              message: resp["message"],
+                          controladorReserva.buscandoCliente = false;
+
+                          if (resp["status"] == "success") {
+                            nombresController.text = resp["data"]["nombres"];
+                            telefonoController.text = resp["data"]["telefono"];
+                            correoController.text = resp["data"]["email"];
+                            controladorReserva.modeloCliente = ModeloCliente(
+                              id: resp["data"]["id"].toString(),
+                              nombre: resp["data"]["nombres"],
+                              email: resp["data"]["email"],
+                              dni: value,
+                              telefono: resp["data"]["telefono"],
                             );
+                          } else {
+                            if (context.mounted) {
+                              Mensaje.showConfirmDialog(
+                                context,
+                                title: "Cliente Nuevo!",
+                                message: resp["message"],
+                              );
+                            }
+                            nombresController.text = "";
+                            telefonoController.text = "";
+                            correoController.text = "";
+                            controladorReserva.modeloCliente = null;
                           }
-                          nombresController.text = "";
-                          telefonoController.text = "";
-                          correoController.text = "";
-                          controladorReserva.modeloCliente = null;
                         }
                       }
                     },
+
                     validator: (value) => value == null || value.isEmpty
                         ? "Ingresa el DNI"
                         : null,
@@ -662,13 +676,14 @@ class NuevaReservaPage extends StatelessWidget {
                           }
 
                           ModeloCliente entidadCliente = ModeloCliente(
-                            id: "",
+                            id: modeloReservaParametro?.entidadCliente.id ?? "",
                             nombre: nombresController.text,
                             email: correoController.text,
                             dni: dniController.text,
                             telefono: telefonoController.text,
                           );
                           ModeloReserva modeloreserva = ModeloReserva(
+                            id: modeloReservaParametro?.id ?? 0,
                             entidadAlojamiento: nombreAlojamiento,
                             fechaLLegada: fechaLlegada.value!,
                             horaLlegada: Funciones.timeToString(
@@ -697,11 +712,17 @@ class NuevaReservaPage extends StatelessWidget {
                           if (resultado["status"] == "success") {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Reserva registrada"),
-                                ),
+                                SnackBar(content: Text(resultado["message"])),
                               );
                               Future.delayed(Duration(seconds: 2));
+                              if (editar) {
+                                controladorReserva.variasReservas = false;
+                                await controladorReserva.obtenerReservas(
+                                  controladorReserva
+                                      .listaModeloAlojamiento[0]
+                                      .id,
+                                );
+                              }
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -711,6 +732,12 @@ class NuevaReservaPage extends StatelessWidget {
                                 ),
                               );
                             }
+                          } else {
+                            Mensaje.showConfirmDialog(
+                              context,
+                              title: "Error!",
+                              message: resultado["message"],
+                            );
                           }
                         }
                       },

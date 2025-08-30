@@ -85,6 +85,7 @@ class ControladorReserva extends ChangeNotifier {
       listaReservas = List<ModeloReserva>.from(
         respuesta["data"].map((e) {
           return ModeloReserva(
+            id: e["id_reserva"] ?? 0,
             entidadAlojamiento: ModeloAlojamiento(
               id: e["entidadAlojamiento"].toString(),
               nombre: e["nombre"],

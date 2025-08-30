@@ -6,7 +6,9 @@ import 'package:reservalo/modulos/alojamiento/datos/repositorios/repositorioAloj
 import 'package:reservalo/modulos/alojamiento/presentacion/controladores/controladorAlojamiento.dart';
 import 'package:reservalo/modulos/clientes/datos/repositorios/repositorioCliente.dart';
 import 'package:reservalo/modulos/clientes/presentacion/controladores/controladorCliente.dart';
+import 'package:reservalo/modulos/configuraciones/presentacion/controlador/controladorConfi.dart';
 import 'package:reservalo/modulos/inicio/presentacion/paginas/index.dart';
+import 'package:reservalo/modulos/inicio/presentacion/paginas/splash.dart';
 import 'package:reservalo/modulos/reservas/datos/repositorios/repositorioReserva.dart';
 import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 
@@ -22,7 +24,8 @@ void main() async {
       providers: [ChangeNotifierProvider(create: (context) => ControladorInicio(),),
         ChangeNotifierProvider(create: (context) => ControladorCliente(repositorioCliente: RepositorioCliente()),),
         ChangeNotifierProvider(create: (context) => ControladorAlojamiento(repositorioAlojamiento: RepositorioAlojamiento()),),
-        ChangeNotifierProvider(create: (context) => ControladorReserva(repositorioReserva: RepositorioReserva(),controladorCliente: ControladorCliente(repositorioCliente: RepositorioCliente())),)
+        ChangeNotifierProvider(create: (context) => ControladorReserva(repositorioReserva: RepositorioReserva(),controladorCliente: ControladorCliente(repositorioCliente: RepositorioCliente())),),
+        ChangeNotifierProvider(create: (context) => ControladorConf())
 
       ],
       child: const MyApp(),
@@ -47,7 +50,7 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: Colors.white,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
-        home: Index(),
+        home: Splash(),
       ),
     );
   }

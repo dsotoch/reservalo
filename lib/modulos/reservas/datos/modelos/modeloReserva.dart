@@ -4,6 +4,7 @@ import 'package:reservalo/modulos/reservas/dominio/entidadReserva.dart';
 
 class ModeloReserva extends EntidadReserva {
   ModeloReserva({
+    required int id,
     required ModeloAlojamiento entidadAlojamiento,
     required DateTime fechaLLegada,
     required String horaLlegada,
@@ -20,6 +21,7 @@ class ModeloReserva extends EntidadReserva {
     required String notaCliente,
     required String estadoReserva,
   }) : super(
+    id,
     entidadAlojamiento,
     fechaLLegada,
     horaLlegada,
@@ -40,6 +42,7 @@ class ModeloReserva extends EntidadReserva {
   // ===== fromJson =====
   factory ModeloReserva.fromJson(Map<String, dynamic> json) {
     return ModeloReserva(
+      id:json['id_reserva']??0,
       entidadAlojamiento: ModeloAlojamiento.fromJson(json['entidadAlojamiento']),
       fechaLLegada: json['fechaLLegada'] ?? '',
       horaLlegada: json['horaLlegada'] ?? '',
@@ -61,6 +64,7 @@ class ModeloReserva extends EntidadReserva {
   // ===== toJson / toMap =====
   Map<String, dynamic> toJson() {
     return {
+      'id':id,
       'entidadAlojamiento': (entidadAlojamiento as ModeloAlojamiento).toJson(),
       'fechaLLegada': fechaLLegada.toIso8601String().split('T')[0],
       'horaLlegada': horaLlegada,
