@@ -136,6 +136,7 @@ class NuevaReservaPage extends StatelessWidget {
                                     12,
                                     31,
                                   ),
+                                    locale: const Locale('es', 'ES')
                                 );
                                 if (fecha != null) fechaLlegada.value = fecha;
                               },
@@ -158,6 +159,12 @@ class NuevaReservaPage extends StatelessWidget {
                                 final hora = await showTimePicker(
                                   context: context,
                                   initialTime: value ?? TimeOfDay.now(),
+                                  builder: (context, child) {
+                                    return MediaQuery(
+                                      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+                                      child: child!,
+                                    );
+                                  },
                                 );
 
                                 if (hora != null) {
@@ -242,7 +249,8 @@ class NuevaReservaPage extends StatelessWidget {
                               child: Text(
                                 value == null
                                     ? "Seleccionar hora"
-                                    : value.format(context),
+                                    : DateFormat.jm('en_US')
+                                  .format(DateTime(0, 0, 0, value.hour, value.minute)),
                               ),
                             );
                           },
@@ -276,7 +284,7 @@ class NuevaReservaPage extends StatelessWidget {
                                     DateTime.now().year,
                                     12,
                                     31,
-                                  ),
+                                  ),locale: const Locale('es', 'ES')
                                 );
                                 if (fecha != null) fechaSalida.value = fecha;
                               },
@@ -299,6 +307,12 @@ class NuevaReservaPage extends StatelessWidget {
                                 final hora = await showTimePicker(
                                   context: context,
                                   initialTime: value ?? TimeOfDay.now(),
+                                  builder: (context, child) {
+                                    return MediaQuery(
+                                      data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+                                      child: child!,
+                                    );
+                                  },
                                 );
                                 if (hora != null) {
                                   horaSalida.value = TimeOfDay(
@@ -310,7 +324,8 @@ class NuevaReservaPage extends StatelessWidget {
                               child: Text(
                                 value == null
                                     ? "Seleccionar hora"
-                                    : value.format(context),
+                                    : DateFormat.jm('en_US')
+                                  .format(DateTime(0, 0, 0, value.hour, value.minute)),
                               ),
                             );
                           },
@@ -536,9 +551,7 @@ class NuevaReservaPage extends StatelessWidget {
                     decoration: const InputDecoration(
                       labelText: "Correo electrónico",
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? "Ingresa el correo"
-                        : null,
+
                   ),
                   TextFormField(
                     controller: telefonoController,

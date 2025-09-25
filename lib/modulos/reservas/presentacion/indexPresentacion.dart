@@ -59,6 +59,9 @@ class CalendarioReservas extends StatelessWidget {
                     onSelected: (ModeloAlojamiento? value) async {
                       if (value != null) {
                         _valorSeleccionado = value;
+                        controladorReserva.todosAlojamientos = false;
+                        controladorReserva.variasReservas = false;
+
                         await controladorReserva.obtenerReservas(value.id);
                       }
                     },
@@ -76,6 +79,7 @@ class CalendarioReservas extends StatelessWidget {
                 const SizedBox(width: 10),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    controladorReserva.todosAlojamientos = false;
                     await controladorReserva.obtenerReservas(
                       _valorSeleccionado?.id ??
                           controladorReserva.listaModeloAlojamiento[0].id,
@@ -209,18 +213,16 @@ class CalendarioReservas extends StatelessWidget {
             itemCount: dias.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
+              crossAxisSpacing: 4, // menos espacio entre columnas
+              mainAxisSpacing: 4, // menos espacio entre filas
+              mainAxisExtent: 40,
             ),
             itemBuilder: (context, index) {
               final dia = dias[index];
-              // Comprobar si es hoy
-              final isHoy =
-                  dia != null &&
-                  controladorReserva.fechaActual.year == hoy.year &&
-                  controladorReserva.fechaActual.month == hoy.month &&
-                  dia == hoy.day;
 
+              final hoy = DateTime.now();
+
+              // verificamos si el día está reservado
               final tieneReserva =
                   dia != null &&
                   controladorReserva.listaReservas.any((reserva) {
@@ -235,10 +237,19 @@ class CalendarioReservas extends StatelessWidget {
                             const Duration(days: 1),
                           ),
                         ) &&
-                        fechaDia.isBefore(
-                          reserva.fechaSalida.add(const Duration(days: 1)),
-                        );
+                        fechaDia.isBefore(reserva.fechaSalida);
                   });
+
+              // condición extra → marcar como rojo si el día es anterior a hoy
+              final esAnteriorAHoy =
+                  dia != null &&
+                  DateTime(
+                    controladorReserva.fechaActual.year,
+                    controladorReserva.fechaActual.month,
+                    dia,
+                  ).isBefore(DateTime(hoy.year, hoy.month, hoy.day));
+
+              final esRojo = tieneReserva || esAnteriorAHoy;
 
               return Material(
                 color: Colors.transparent,
@@ -260,11 +271,7 @@ class CalendarioReservas extends StatelessWidget {
                                   const Duration(days: 1),
                                 ),
                               ) &&
-                              fechaSeleccionada.isBefore(
-                                reserva.fechaSalida.add(
-                                  const Duration(days: 1),
-                                ),
-                              );
+                              fechaSeleccionada.isBefore(reserva.fechaSalida);
                         })
                         .toList();
 
@@ -297,7 +304,7 @@ class CalendarioReservas extends StatelessWidget {
                   },
                   child: Ink(
                     decoration: BoxDecoration(
-                      color: tieneReserva
+                      color: esRojo
                           ? Colors.redAccent
                           : dia != null
                           ? Colors.blue[100]
@@ -305,7 +312,7 @@ class CalendarioReservas extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: dia != null
-                            ? (tieneReserva ? Colors.red : Colors.blue)
+                            ? (esRojo ? Colors.red : Colors.blue)
                             : Colors.transparent,
                       ),
                       boxShadow: dia != null
@@ -325,10 +332,8 @@ class CalendarioReservas extends StatelessWidget {
                           dia?.toString() ?? "",
                           style: TextStyle(
                             fontSize: 14.sp,
-                            fontWeight: isHoy
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: tieneReserva ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.normal,
+                            color: esRojo ? Colors.white : Colors.black,
                           ),
                         ),
                       ),
@@ -339,18 +344,51 @@ class CalendarioReservas extends StatelessWidget {
             },
           ),
           const SizedBox(height: 10),
-          if (!controladorReserva.variasReservas) ...[
-            const SizedBox(height: 20),
-            Image.asset(
-              "assets/images/logo.jpg",
+          if (controladorReserva.todosAlojamientos) ...[
+            Container(
               width: double.infinity,
-              height: 170.h,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.orange, Colors.deepOrangeAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(color: Colors.yellowAccent, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  "Mostrando las Reservas de todos los Alojamientos",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black45,
+                        offset: Offset(1, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
 
-          if (controladorReserva.variasReservas)
+          if (controladorReserva.variasReservas) ...[
             SizedBox(
-              height: 205.h,
+              height: 600.h, // puedes ajustar la altura
               width: double.infinity,
               child: ListView.builder(
                 itemCount:
@@ -358,7 +396,12 @@ class CalendarioReservas extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final reserva =
                       controladorReserva.listaReservasDiaSeleccionado[index];
-
+                  final horaString = reserva.horaLlegada;
+                  final dateTime = DateTime.parse("2000-01-01 $horaString");
+                  final hora = DateFormat("hh:mm a").format(dateTime);
+                  final horaString2 = reserva.horaLlegada;
+                  final dateTime2 = DateTime.parse("2000-01-01 $horaString2");
+                  final salida = DateFormat("hh:mm a").format(dateTime2);
                   return InkWell(
                     onTap: () {
                       Navigator.push(
@@ -375,21 +418,58 @@ class CalendarioReservas extends StatelessWidget {
                       color: Colors.greenAccent.shade100,
                       margin: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 6,
+                        vertical: 4,
                       ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: const Icon(Icons.event, color: Colors.blue),
-                        title: Text(
-                          'Cliente: ${reserva.entidadCliente.nombre}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
+                      elevation: 1, // menos sombra
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0), // menos padding
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Entrada: ${reserva.fechaLLegada}'),
-                            Text('Salida: ${reserva.fechaSalida}'),
-                            Text('Estado: ${reserva.estadoReserva}'),
+                            const Icon(
+                              Icons.event,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '🏨 ${reserva.entidadAlojamiento.nombre}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14, // texto más pequeño
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Cliente: ${reserva.entidadCliente.nombre}',
+                                    style: const TextStyle(fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Entrada: ${DateFormat("dd-MM-yyyy").format(reserva.fechaLLegada)}  $hora',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  Text(
+                                    'Salida: ${DateFormat("dd-MM-yyyy").format(reserva.fechaSalida)} $salida',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  Text(
+                                    'Estado: ${reserva.estadoReserva}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -398,6 +478,8 @@ class CalendarioReservas extends StatelessWidget {
                 },
               ),
             ),
+          ],
+          const SizedBox(height: 8),
         ],
       ),
     );

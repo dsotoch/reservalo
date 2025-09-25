@@ -8,6 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../widgets/mensaje.dart';
 
 class Funciones {
   static String? validacionText(String nombrecampo, String? value) {
@@ -25,9 +28,9 @@ class Funciones {
     FocusScope.of(context).unfocus();
   }
 
-  static const String _baseUrl = "http://192.168.0.106/ayar_backeend/index.php";
+  static const String _baseUrl =
+      "https://reservalo-ayar.com/ayar_backeend/index.php";
 
-  // Método GET reutilizable
   static Future<dynamic> get(String accion) async {
     try {
       final url = Uri.parse("$_baseUrl?accion=$accion");
@@ -145,6 +148,26 @@ class Funciones {
     var storage = await Permission.storage.request(); // Android
 
     return status.isGranted || storage.isGranted;
+  }
+
+  Future<void> abrirWhatsApp(
+    String telefono,
+    String mensaje,
+    BuildContext context,
+  ) async {
+    final urlWeb = Uri.parse(
+      "https://wa.me/$telefono?text=${Uri.encodeComponent(mensaje)}",
+    );
+
+    if (await canLaunchUrl(urlWeb)) {
+      await launchUrl(urlWeb, mode: LaunchMode.externalApplication);
+    } else {
+      await Mensaje.showConfirmDialog(
+        context,
+        title: "⚠️ERROR",
+        message: "No se pudo abrir WhatsApp",
+      );
+    }
   }
 
   static Future<dynamic> post(String accion, Map<String, dynamic> body) async {

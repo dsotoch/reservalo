@@ -13,6 +13,7 @@ import 'package:reservalo/modulos/reservas/datos/repositorios/repositorioReserva
 import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 
 import 'core/controladores/controladorNavegacion.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,14 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       child: MaterialApp(
         title: 'Flutter Demo',
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es', 'ES'), // Español
+        ],
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           scaffoldBackgroundColor: Colors.white,

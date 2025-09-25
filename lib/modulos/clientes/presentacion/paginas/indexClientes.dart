@@ -278,6 +278,7 @@ class IndexClientes extends StatelessWidget {
                            }
                           final respuesta = await controladorCliente
                               .eliminarCliente(cliente.id);
+
                           if (respuesta["status"] == "success") {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(

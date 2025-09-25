@@ -8,6 +8,8 @@ import 'package:reservalo/modulos/clientes/presentacion/paginas/indexClientes.da
 import 'package:reservalo/modulos/configuraciones/presentacion/controlador/controladorConfi.dart';
 import 'package:reservalo/modulos/configuraciones/presentacion/indexConfiguracion.dart';
 import 'package:reservalo/modulos/inicio/presentacion/paginas/principal.dart';
+import 'package:reservalo/modulos/inicio/presentacion/paginas/reportes.dart';
+import 'package:reservalo/modulos/inicio/presentacion/paginas/reportesWidget.dart';
 import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 import 'package:reservalo/modulos/reservas/presentacion/indexPresentacion.dart';
 
@@ -82,8 +84,58 @@ class Index extends StatelessWidget {
                 return CalendarioReservas();
               case "configuraciones":
                 return Configuracion();
+              case "reportes":
+                return ReporteWidget(
+                  reportes: Reportes(
+                    listaReservas: controladorReserva.listaReservas,
+                  ),
+                );
               default:
-                return Principal();
+                return FutureBuilder(
+                  future: inicialisardatos(
+                    controladorAlojamiento,
+                    controladorReserva,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        color: Colors.black.withOpacity(0.5),
+                        height: MediaQuery.of(context).size.height,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Animación circular
+                              SizedBox(
+                                width: 80,
+                                height: 80,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 6,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.blueAccent,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              // Mensaje
+                              Text(
+                                "Cargando, por favor espera...",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else {
+                      return CalendarioReservas();
+                    }
+                  },
+                );
             }
           },
         ),
@@ -114,31 +166,17 @@ class Index extends StatelessWidget {
             ),
 
             ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Inicio'),
-              selected: controladorInicio.paginaActiva == "inicio",
-              selectedTileColor: Colors.blue.shade200,
-              selectedColor: Colors.white,
-              onTap: () {
-                controladorInicio.paginaActiva = "inicio";
-                Navigator.pop(context); // Cierra el drawer
-              },
-            ),
-
-            ListTile(
               selected: controladorInicio.paginaActiva == "reservas",
               selectedTileColor: Colors.blue.shade200,
               selectedColor: Colors.white,
               leading: Icon(Icons.calendar_month),
               title: Text('Reservas'),
               onTap: () async {
-
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  builder: (context) =>
+                      const Center(child: CircularProgressIndicator()),
                 );
 
                 try {
@@ -148,16 +186,20 @@ class Index extends StatelessWidget {
 
                   controladorReserva.listaModeloAlojamiento =
                       controladorAlojamiento.modeloAlojamiento;
+                  await controladorReserva.obtenerReservasTodas();
+                  controladorReserva.todosAlojamientos = true;
+                  final modeloreserva = controladorReserva.listaReservas.toList();
 
-                  await controladorReserva.obtenerReservas(
-                    controladorReserva.listaModeloAlojamiento[0].id,
-                  );
+                  if (modeloreserva.length > 1) {
+                    controladorReserva.variasReservas = true;
+                    controladorReserva.listaReservasDiaSeleccionado = modeloreserva;
+                  } else {
+                    controladorReserva.variasReservas = false;
+                  }
                 } finally {
                   Navigator.of(context).pop();
-
                 }
               },
-
             ),
             ListTile(
               selected: controladorInicio.paginaActiva == "alojamientos",
@@ -182,12 +224,33 @@ class Index extends StatelessWidget {
               },
             ),
             ListTile(
+              selected: controladorInicio.paginaActiva == "reportes",
+              selectedTileColor: Colors.blue.shade200,
+              selectedColor: Colors.white,
+              leading: Icon(Icons.balance),
+              title: Text('Reportes'),
+              onTap: () async {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) =>
+                      const Center(child: CircularProgressIndicator()),
+                );
+                try {
+                  await controladorReserva.obtenerReservasTodas();
+                  controladorInicio.paginaActiva = "reportes";
+                } finally {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            ListTile(
               selected: controladorInicio.paginaActiva == "configuraciones",
               selectedTileColor: Colors.blue.shade200,
               selectedColor: Colors.white,
               leading: Icon(Icons.settings),
               title: Text('Configuración'),
-              onTap: ()async {
+              onTap: () async {
                 controladorInicio.paginaActiva = "configuraciones";
                 await controladorConf.Reglas();
                 Navigator.pop(context);
@@ -197,5 +260,25 @@ class Index extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> inicialisardatos(
+    ControladorAlojamiento controladorAlojamiento,
+    ControladorReserva controladorReserva,
+  ) async {
+    await controladorAlojamiento.listarAlojamientos();
+    controladorReserva.listaModeloAlojamiento =
+        controladorAlojamiento.modeloAlojamiento;
+    await controladorReserva.obtenerReservasTodas();
+    controladorReserva.todosAlojamientos = true;
+
+    final modeloreserva = controladorReserva.listaReservas.toList();
+
+    if (modeloreserva.length > 1) {
+      controladorReserva.variasReservas = true;
+      controladorReserva.listaReservasDiaSeleccionado = modeloreserva;
+    } else {
+      controladorReserva.variasReservas = false;
+    }
   }
 }

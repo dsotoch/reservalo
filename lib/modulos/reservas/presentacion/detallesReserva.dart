@@ -13,6 +13,7 @@ import 'package:reservalo/modulos/reservas/datos/modelos/modeloReserva.dart';
 import 'package:reservalo/modulos/reservas/presentacion/controladores/controladorReserva.dart';
 import 'package:reservalo/modulos/reservas/presentacion/nuevaReserva.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetallesReserva extends StatelessWidget {
   final ModeloReserva modeloReserva;
@@ -360,6 +361,32 @@ class DetallesReserva extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (!reservaNueva) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12),
+                        margin: EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50, // color de fondo suave
+                          border: Border.all(color: Colors.blue.shade200), // borde
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${modeloReserva.observaciones}",
+                              style: TextStyle(fontSize: 12.sp, color: Colors.blue.shade900),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "${modeloReserva.notaCliente}",
+                              style: TextStyle(fontSize: 12.sp, color: Colors.blue.shade900),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
 
                     Text(
@@ -380,39 +407,14 @@ class DetallesReserva extends StatelessWidget {
                     Image.asset(
                       "assets/images/logo.jpg",
                       width: double.infinity,
-                      height: 170.h,
+                      height: 110.h,
                     ),
                     const SizedBox(height: 10),
                   ],
                 ),
               ),
             ),
-            if (!reservaNueva) ...[
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12),
-                margin: EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50, // color de fondo suave
-                  border: Border.all(color: Colors.blue.shade200), // borde
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "⚠️ ${modeloReserva.observaciones}",
-                      style: TextStyle(fontSize: 12.sp, color: Colors.blue.shade900),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "⚠️ ${modeloReserva.notaCliente}",
-                      style: TextStyle(fontSize: 12.sp, color: Colors.blue.shade900),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+
 
             GestureDetector(
               onTap: () async {
@@ -482,14 +484,19 @@ class DetallesReserva extends StatelessWidget {
                   message: "¿Deseas Compartir la Imagen?",
                 );
                 if (respuesta != null && respuesta == true) {
-                  final bytes = await Funciones.ImagenEnBytes(
+
+               await  Funciones().abrirWhatsApp(modeloReserva.entidadCliente.telefono, "Te Comparto los Detalles de tu Reserva.", context);
+
+                  /*  final bytes = await Funciones.ImagenEnBytes(
                     screenshotController,
                   );
-                  await Funciones.compartirImagen(
+                 await Funciones.compartirImagen(
                     context,
                     bytes!,
                     modeloReserva.entidadCliente.nombre,
                   );
+                 */
+
                 }
               },
               child: Container(

@@ -78,9 +78,55 @@ class ControladorReserva extends ChangeNotifier {
   Future<dynamic> crearReserva(ModeloReserva modelo) async {
     return await repositorioReserva.crearReserva(modelo);
   }
+  bool _todosAlojamientos=false;
+
+
+  bool get todosAlojamientos => _todosAlojamientos;
+
+  set todosAlojamientos(bool value) {
+    _todosAlojamientos = value;
+    notifyListeners();
+  }
 
   Future<void> obtenerReservas(String id) async {
     final respuesta = await repositorioReserva.obtenerReservas(id);
+    if (respuesta["status"] == "success") {
+      listaReservas = List<ModeloReserva>.from(
+        respuesta["data"].map((e) {
+          return ModeloReserva(
+            id: e["id_reserva"] ?? 0,
+            entidadAlojamiento: ModeloAlojamiento(
+              id: e["entidadAlojamiento"].toString(),
+              nombre: e["nombre"],
+              direccion: e["direccion"] ?? "",
+            ),
+            fechaLLegada: DateTime.parse(e["fechaLlegada"]),
+            horaLlegada: e["horaLlegada"],
+            fechaSalida: DateTime.parse(e["fechaSalida"]),
+            horaSalida: e["horaSalida"],
+            cantidadAdultos: e["cantidadAdultos"].toString(),
+            cantidadNinos: e["cantidadNinos"].toString(),
+            traeMascotas: e["traeMascotas"] == 1 ? true : false,
+            importeTotal: double.parse(e["importeTotal"]),
+            adelanto: double.parse(e["adelanto"]),
+            pendiente: double.parse(e["pendiente"]),
+            observaciones: e["observaciones"],
+            entidadCliente: ModeloCliente(
+              id: e["entidadCliente"].toString(),
+              nombre: e["nombres"],
+              email: e["email"],
+              dni: e["dni"].toString(),
+              telefono: e["telefono"].toString(),
+            ),
+            notaCliente: e["notaCliente"],
+            estadoReserva: e["estadoReserva"],
+          );
+        }).toList(),
+      );
+    }
+  }
+  Future<void> obtenerReservasTodas() async {
+    final respuesta = await repositorioReserva.obtenerReservasTodas();
     if (respuesta["status"] == "success") {
       listaReservas = List<ModeloReserva>.from(
         respuesta["data"].map((e) {

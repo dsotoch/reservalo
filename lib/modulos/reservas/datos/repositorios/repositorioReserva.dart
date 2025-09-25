@@ -5,7 +5,12 @@ class RepositorioReserva {
   Future<dynamic> crearReserva(ModeloReserva modelo) async {
     return await Funciones.post("crear-reserva", modelo.toJson());
   }
+
   Future<dynamic> obtenerReservas(String id) async {
-    return await Funciones.post("buscar-reservas", {"id":id});
+    return await Funciones.post("buscar-reservas", {"id": id});
+  }
+
+  Future<dynamic> obtenerReservasTodas() async {
+    return await Funciones.post("listar-reservas", {});
   }
 }
